@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f6fb;
+padding:20px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th{
+background:#4a6cff;
+color:white;
+padding:8px;
+}
+
+td{
+border:1px solid #ddd;
+padding:6px;
+text-align:center;
+}
+
+.selected-row{
+background:#7cff9c !important;
+}
+
+input{
+width:70px;
+margin:4px;
+padding:6px;
+}
+
+button{
+padding:7px 12px;
+background:#4a6cff;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+.rowNum{
+background:#eee;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Gap Search Table</h2>
+
+<form id="searchForm"></form>
+
+<table>
+<thead id="head"></thead>
+<tbody id="body"></tbody>
+</table>
+
+</div>
+
+<script>
+
+const sheetURL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQn1GVpsnyZ8sGhfjrFyoFOrQYiJOy0AFZEF86ZMzIFWCAxUPoF70bRCvAk9dZGOjpt_DU2FunIo6cC/pub?output=csv";
+
+let tableData=[];
+let headers=[];
+
+let idxGive, idxReceive, idxPaid, idxResult;
+let idxTimestamp;
+
+
+// convert to number
+function num(v){
+return Number(String(v).trim());
+}
+
+
+// find index
+function findIndex(keyword){
+
+return headers.findIndex(h =>
+h.toLowerCase().includes(keyword)
+);
+
+}
+
+
+// load sheet
+async function loadSheet(){
+
+let res = await fetch(sheetURL);
+let text = await res.text();
+
+let rows = text.trim().split("\n");
+
+headers = rows[0].split(",");
+
+
+// find columns
+
+idxTimestamp = findIndex("timestamp");
+
+idxGive = findIndex("give");
+idxReceive = findIndex("receive");
+idxPaid = findIndex("paid");
+idxResult = findIndex("result");
+
+
+createHeader();
+
+for(let i=1;i<rows.length;i++){
+
+let cols = rows[i].split(",");
+
+tableData.push(cols);
+
+addRow(cols,i);
+
+}
+
+createSearch();
+
+}
+
+
+// header (skip timestamp)
+function createHeader(){
+
+let h=document.getElementById("head");
+
+let newHeaders = headers.filter((h,i)=> i!==idxTimestamp);
+
+h.innerHTML="<tr><th>#</th>" +
+newHeaders.map(x=>`<th>${x}</th>`).join("") +
+"</tr>";
+
+}
+
+
+// add rows (skip timestamp)
+function addRow(cols,index){
+
+let tr=document.createElement("tr");
+
+let numTd=document.createElement("td");
+numTd.textContent=index;
+numTd.className="rowNum";
+
+tr.appendChild(numTd);
+
+
+cols.forEach((c,i)=>{
+
+if(i===idxTimestamp) return;
+
+let td=document.createElement("td");
+td.textContent=c;
+
+tr.appendChild(td);
+
+});
+
+document.getElementById("body").appendChild(tr);
+
+}
+
+
+// search inputs
+function createSearch(){
+
+let f=document.getElementById("searchForm");
+
+f.innerHTML="";
+
+["Give","Receive","Paid","Result"]
+.forEach(n=>{
+
+let i=document.createElement("input");
+
+i.id="s"+n;
+i.placeholder=n;
+
+f.appendChild(i);
+
+});
+
+let b=document.createElement("button");
+
+b.type="button";
+b.textContent="Search";
+b.onclick=search;
+
+f.appendChild(b);
+
+}
+
+
+// gap search
+function search(){
+
+let give = num(document.getElementById("sGive").value);
+let receive = num(document.getElementById("sReceive").value);
+let paid = num(document.getElementById("sPaid").value);
+let result = num(document.getElementById("sResult").value);
+
+
+if(
+isNaN(give)||
+isNaN(receive)||
+isNaN(paid)||
+isNaN(result)
+){
+alert("Enter all numbers");
+return;
+}
+
+
+let gap1 = receive - give;
+let gap2 = paid - receive;
+let gap3 = result - paid;
+
+
+document
+.querySelectorAll("#body tr")
+.forEach(r=>r.classList.remove("selected-row"));
+
+
+tableData.forEach((row,i)=>{
+
+let g = num(row[idxGive]);
+let r = num(row[idxReceive]);
+let p = num(row[idxPaid]);
+let re = num(row[idxResult]);
+
+if(
+isNaN(g)||
+isNaN(r)||
+isNaN(p)||
+isNaN(re)
+){
+return;
+}
+
+let d1 = r - g;
+let d2 = p - r;
+let d3 = re - p;
+
+
+if(
+d1===gap1 &&
+d2===gap2 &&
+d3===gap3
+){
+
+document
+.getElementById("body")
+.children[i]
+.classList.add("selected-row");
+
+}
+
+});
+
+}
+
+
+loadSheet();
+
+</script>
+
+</body>
+</html>
