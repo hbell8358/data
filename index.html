@@ -1,296 +1,419 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<style>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6fb;
+            padding: 20px;
+        }
 
-body{
-font-family:Arial;
-background:#f4f6fb;
-padding:20px;
-}
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
 
-.container{
-max-width:1000px;
-margin:auto;
-background:white;
-padding:20px;
-border-radius:10px;
-box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
-table{
-width:100%;
-border-collapse:collapse;
-}
+        th {
+            background: #4a6cff;
+            color: white;
+            padding: 8px;
+        }
 
-th{
-background:#4a6cff;
-color:white;
-padding:8px;
-}
+        td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
 
-td{
-border:1px solid #ddd;
-padding:6px;
-text-align:center;
-}
+        .selected-row {
+            background: #7cff9c !important;
+        }
 
-.selected-row{
-background:#7cff9c !important;
-}
+        input {
+            width: 70px;
+            margin: 4px;
+            padding: 6px;
+        }
 
-input{
-width:70px;
-margin:4px;
-padding:6px;
-}
+        button {
+            padding: 7px 12px;
+            background: #4a6cff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
 
-button{
-padding:7px 12px;
-background:#4a6cff;
-color:white;
-border:none;
-border-radius:6px;
-cursor:pointer;
-}
-
-.rowNum{
-background:#eee;
-font-weight:bold;
-}
-
-</style>
+        .rowNum {
+            background: #eee;
+            font-weight: bold;
+        }
+    </style>
 
 </head>
 
 <body>
 
-<div class="container">
+    <div class="container">
 
-<h2>Gap Search Table</h2>
+        <h2>Gap Search Table</h2>
 
-<form id="searchForm"></form>
+        <form id="searchForm"></form>
 
-<table>
-<thead id="head"></thead>
-<tbody id="body"></tbody>
-</table>
+        <table>
+            <thead id="head"></thead>
+            <tbody id="body"></tbody>
+        </table>
 
-</div>
+    </div>
 
-<script>
+    <script>
 
-const sheetURL =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vQn1GVpsnyZ8sGhfjrFyoFOrQYiJOy0AFZEF86ZMzIFWCAxUPoF70bRCvAk9dZGOjpt_DU2FunIo6cC/pub?output=csv";
+        const sheetURL =
+            "https://docs.google.com/spreadsheets/d/e/2PACX-1vQn1GVpsnyZ8sGhfjrFyoFOrQYiJOy0AFZEF86ZMzIFWCAxUPoF70bRCvAk9dZGOjpt_DU2FunIo6cC/pub?output=csv";
 
-let tableData=[];
-let headers=[];
+        let tableData = [];
+        let headers = [];
+        let idxTime;
 
-let idxGive, idxReceive, idxPaid, idxResult;
-let idxTimestamp;
+        let idxGive, idxReceive, idxPaid, idxResult;
+        let idxTimestamp;
 
 
-// convert to number
-function num(v){
-return Number(String(v).trim());
-}
+        // convert to number
+        // function num(v) {
+        //     return Number(String(v).trim());
+        // }
 
+        function num(v) {
+            if (v === undefined || v === null || String(v).trim() === "") {
+                return NaN; // force skip invalid rows
+            }
+            return Number(String(v).trim());
+        }
 
-// find index
-function findIndex(keyword){
 
-return headers.findIndex(h =>
-h.toLowerCase().includes(keyword)
-);
+        // find index
+        function findIndex(keyword) {
+            return headers.findIndex(h => {
+                let clean = h.trim().toLowerCase();
 
-}
+                if (keyword === "time") return clean === "time";
+                if (keyword === "timestamp") return clean === "timestamp";
 
+                return clean.includes(keyword);
+            });
+        }
 
-// load sheet
-async function loadSheet(){
 
-let res = await fetch(sheetURL);
-let text = await res.text();
+        // load sheet
+        async function loadSheet() {
+            let res = await fetch(sheetURL);
+            let text = await res.text();
 
-let rows = text.trim().split("\n");
+            let rows = text.trim().split("\n");
 
-headers = rows[0].split(",");
+            headers = rows[0].split(",");
 
 
-// find columns
+            // find columns
+            console.log(headers);
+            idxTimestamp = findIndex("timestamp");
+            idxGive = findIndex("give");
+            idxReceive = findIndex("receive");
+            idxPaid = findIndex("paid");
+            idxResult = findIndex("result");
+            idxTime = findIndex("time");
+            console.log("Give", idxGive);
+            console.log("Time", idxTime);
 
-idxTimestamp = findIndex("timestamp");
 
-idxGive = findIndex("give");
-idxReceive = findIndex("receive");
-idxPaid = findIndex("paid");
-idxResult = findIndex("result");
+            createHeader();
 
+            for (let i = 1; i < rows.length; i++) {
 
-createHeader();
+                let cols = rows[i].split(",");
 
-for(let i=1;i<rows.length;i++){
+                tableData.push(cols);
 
-let cols = rows[i].split(",");
+                addRow(cols, i);
 
-tableData.push(cols);
+            }
 
-addRow(cols,i);
+            createSearch();
 
-}
+        }
 
-createSearch();
 
-}
+        // header (skip timestamp)
+        function createHeader() {
 
+            let h = document.getElementById("head");
 
-// header (skip timestamp)
-function createHeader(){
+            let newHeaders = headers.filter((h, i) => i !== idxTimestamp);
 
-let h=document.getElementById("head");
+            h.innerHTML = "<tr><th>#</th>" +
+                newHeaders.map(x => `<th>${x}</th>`).join("") +
+                "</tr>";
 
-let newHeaders = headers.filter((h,i)=> i!==idxTimestamp);
+        }
 
-h.innerHTML="<tr><th>#</th>" +
-newHeaders.map(x=>`<th>${x}</th>`).join("") +
-"</tr>";
 
-}
+        // add rows (skip timestamp)
+        function addRow(cols, index) {
 
+            let tr = document.createElement("tr");
 
-// add rows (skip timestamp)
-function addRow(cols,index){
+            let numTd = document.createElement("td");
+            numTd.textContent = index;
+            numTd.className = "rowNum";
 
-let tr=document.createElement("tr");
+            tr.appendChild(numTd);
 
-let numTd=document.createElement("td");
-numTd.textContent=index;
-numTd.className="rowNum";
 
-tr.appendChild(numTd);
+            cols.forEach((c, i) => {
 
+                if (i === idxTimestamp) return;
 
-cols.forEach((c,i)=>{
+                let td = document.createElement("td");
+                td.textContent = c;
 
-if(i===idxTimestamp) return;
+                tr.appendChild(td);
 
-let td=document.createElement("td");
-td.textContent=c;
+            });
 
-tr.appendChild(td);
+            document.getElementById("body").appendChild(tr);
 
-});
+        }
 
-document.getElementById("body").appendChild(tr);
 
-}
+        // search inputs
+        function createSearch() {
 
+            let f = document.getElementById("searchForm");
 
-// search inputs
-function createSearch(){
+            f.innerHTML = "";
 
-let f=document.getElementById("searchForm");
+            ["Give", "Receive", "Paid", "Result"]
+                .forEach(n => {
 
-f.innerHTML="";
+                    let i = document.createElement("input");
 
-["Give","Receive","Paid","Result"]
-.forEach(n=>{
+                    i.id = "s" + n;
+                    i.placeholder = n;
 
-let i=document.createElement("input");
+                    f.appendChild(i);
 
-i.id="s"+n;
-i.placeholder=n;
+                });
 
-f.appendChild(i);
+            let b = document.createElement("button");
 
-});
+            b.type = "button";
+            b.textContent = "Search";
+            b.onclick = search;
 
-let b=document.createElement("button");
+            f.appendChild(b);
 
-b.type="button";
-b.textContent="Search";
-b.onclick=search;
+            let resetBtn = document.createElement("button");
+            resetBtn.type = "button";
+            resetBtn.textContent = "Reset";
 
-f.appendChild(b);
+            resetBtn.onclick = () => {
 
-}
+                // 🔹 1. Clear all input fields
+                document.getElementById("sGive").value = "";
+                document.getElementById("sReceive").value = "";
+                document.getElementById("sPaid").value = "";
+                document.getElementById("sResult").value = "";
 
+                // 🔹 2. Show all rows again
+                document.querySelectorAll("#body tr").forEach(r => {
+                    r.style.display = "";
 
-// gap search
-function search(){
+                    // 🔹 3. Remove all highlights
+                    r.classList.remove("selected-row", "chain-row");
+                });
 
-let give = num(document.getElementById("sGive").value);
-let receive = num(document.getElementById("sReceive").value);
-let paid = num(document.getElementById("sPaid").value);
-let result = num(document.getElementById("sResult").value);
+            };
 
+            f.appendChild(resetBtn);
 
-if(
-isNaN(give)||
-isNaN(receive)||
-isNaN(paid)||
-isNaN(result)
-){
-alert("Enter all numbers");
-return;
-}
+        }
 
 
-let gap1 = receive - give;
-let gap2 = paid - receive;
-let gap3 = result - paid;
+        // gap search
+        // function search() {
 
+        //     let give = num(document.getElementById("sGive").value);
+        //     let receive = num(document.getElementById("sReceive").value);
+        //     let paid = num(document.getElementById("sPaid").value);
+        //     let result = num(document.getElementById("sResult").value);
 
-document
-.querySelectorAll("#body tr")
-.forEach(r=>r.classList.remove("selected-row"));
 
+        //     if (
+        //         isNaN(give) ||
+        //         isNaN(receive) ||
+        //         isNaN(paid) ||
+        //         isNaN(result)
+        //     ) {
+        //         alert("Enter all numbers");
+        //         return;
+        //     }
 
-tableData.forEach((row,i)=>{
 
-let g = num(row[idxGive]);
-let r = num(row[idxReceive]);
-let p = num(row[idxPaid]);
-let re = num(row[idxResult]);
+        //     let gap1 = receive - give;
+        //     let gap2 = paid - receive;
+        //     let gap3 = result - paid;
 
-if(
-isNaN(g)||
-isNaN(r)||
-isNaN(p)||
-isNaN(re)
-){
-return;
-}
 
-let d1 = r - g;
-let d2 = p - r;
-let d3 = re - p;
+        //     document
+        //         .querySelectorAll("#body tr")
+        //         .forEach(r => r.classList.remove("selected-row"));
 
 
-if(
-d1===gap1 &&
-d2===gap2 &&
-d3===gap3
-){
+        //     tableData.forEach((row, i) => {
 
-document
-.getElementById("body")
-.children[i]
-.classList.add("selected-row");
+        //         let g = num(row[idxGive]);
+        //         let r = num(row[idxReceive]);
+        //         let p = num(row[idxPaid]);
+        //         let re = num(row[idxResult]);
 
-}
+        //         if (
+        //             isNaN(g) ||
+        //             isNaN(r) ||
+        //             isNaN(p) ||
+        //             isNaN(re)
+        //         ) {
+        //             return;
+        //         }
 
-});
+        //         let d1 = r - g;
+        //         let d2 = p - r;
+        //         let d3 = re - p;
 
-}
 
+        //         if (
+        //             d1 === gap1 &&
+        //             d2 === gap2 &&
+        //             d3 === gap3
+        //         ) {
 
-loadSheet();
+        //             document
+        //                 .getElementById("body")
+        //                 .children[i]
+        //                 .classList.add("selected-row");
 
-</script>
+        //         }
+
+        //     });
+
+        // }
+
+        function search() {
+
+            let give = num(document.getElementById("sGive").value);
+            let receive = num(document.getElementById("sReceive").value);
+            let paid = num(document.getElementById("sPaid").value);
+            let result = num(document.getElementById("sResult").value);
+
+            if (
+                isNaN(give) ||
+                isNaN(receive) ||
+                isNaN(paid) ||
+                isNaN(result)
+            ) {
+                alert("Enter all numbers");
+                return;
+            }
+
+            let gap1 = receive - give;
+            let gap2 = paid - receive;
+            let gap3 = result - paid;
+
+            let rows = document.querySelectorAll("#body tr");
+
+            // ✅ reset everything first
+            rows.forEach(r => {
+                r.style.display = "none";
+                r.classList.remove("selected-row", "chain-row");
+            });
+
+            const allowedMap = {
+                6: [10, 15, 20],
+                10: [15, 20],
+                15: [20],
+                20: []
+            };
+
+            tableData.forEach((row, i) => {
+
+                let g = num(row[idxGive]);
+                let r = num(row[idxReceive]);
+                let p = num(row[idxPaid]);
+                let re = num(row[idxResult]);
+                let t = num(row[idxTime]);
+
+                // only check gap columns for match
+                if (
+                    isNaN(g) ||
+                    isNaN(r) ||
+                    isNaN(p) ||
+                    isNaN(re)
+                ) return;
+
+                let d1 = r - g;
+                let d2 = p - r;
+                let d3 = re - p;
+
+                // ✅ MATCH FOUND
+                if (d1 === gap1 && d2 === gap2 && d3 === gap3) {
+
+                    // show match row
+                    rows[i].style.display = "";
+                    rows[i].classList.add("selected-row");
+
+                    let allowedTimes = allowedMap[t] || [];
+
+                    for (let j = i + 1; j < tableData.length && j <= i + 5; j++) {
+
+                        let nextTime = num(tableData[j][idxTime]);
+
+                        if (isNaN(nextTime)) continue;
+
+                        if (allowedTimes.includes(nextTime)) {
+
+                            rows[j].style.display = "";
+                            rows[j].classList.add("chain-row");
+
+                            // 🔥 STOP condition
+                            if (nextTime === 20) {
+                                break; // ⛔ STOP everything after reaching 20
+                            }
+                        }
+                    }
+                }
+
+            });
+        }
+
+        loadSheet();
+
+    </script>
 
 </body>
+
 </html>
