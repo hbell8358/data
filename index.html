@@ -323,6 +323,93 @@
 
         // }
 
+        // function search() {
+
+        //     let give = num(document.getElementById("sGive").value);
+        //     let receive = num(document.getElementById("sReceive").value);
+        //     let paid = num(document.getElementById("sPaid").value);
+        //     let result = num(document.getElementById("sResult").value);
+
+        //     if (
+        //         isNaN(give) ||
+        //         isNaN(receive) ||
+        //         isNaN(paid) ||
+        //         isNaN(result)
+        //     ) {
+        //         alert("Enter all numbers");
+        //         return;
+        //     }
+
+        //     let gap1 = receive - give;
+        //     let gap2 = paid - receive;
+        //     let gap3 = result - paid;
+
+        //     let rows = document.querySelectorAll("#body tr");
+
+        //     // ✅ reset everything first
+        //     rows.forEach(r => {
+        //         r.style.display = "none";
+        //         r.classList.remove("selected-row", "chain-row");
+        //     });
+
+        //     const allowedMap = {
+        //         6: [10, 15, 20],
+        //         10: [15, 20],
+        //         15: [20],
+        //         20: []
+        //     };
+
+        //     tableData.forEach((row, i) => {
+
+        //         let g = num(row[idxGive]);
+        //         let r = num(row[idxReceive]);
+        //         let p = num(row[idxPaid]);
+        //         let re = num(row[idxResult]);
+        //         let t = num(row[idxTime]);
+
+        //         // only check gap columns for match
+        //         if (
+        //             isNaN(g) ||
+        //             isNaN(r) ||
+        //             isNaN(p) ||
+        //             isNaN(re)
+        //         ) return;
+
+        //         let d1 = r - g;
+        //         let d2 = p - r;
+        //         let d3 = re - p;
+
+        //         // ✅ MATCH FOUND
+        //         if (d1 === gap1 && d2 === gap2 && d3 === gap3) {
+
+        //             // show match row
+        //             rows[i].style.display = "";
+        //             rows[i].classList.add("selected-row");
+
+        //             let allowedTimes = allowedMap[t] || [];
+
+        //             for (let j = i + 1; j < tableData.length && j <= i + 5; j++) {
+
+        //                 let nextTime = num(tableData[j][idxTime]);
+
+        //                 if (isNaN(nextTime)) continue;
+
+        //                 if (allowedTimes.includes(nextTime)) {
+
+        //                     rows[j].style.display = "";
+        //                     rows[j].classList.add("chain-row");
+
+        //                     // 🔥 STOP condition
+        //                     if (nextTime === 20) {
+        //                         break; // ⛔ STOP everything after reaching 20
+        //                     }
+        //                 }
+        //             }
+        //         }
+
+        //     });
+        // }
+
         function search() {
 
             let give = num(document.getElementById("sGive").value);
@@ -346,18 +433,11 @@
 
             let rows = document.querySelectorAll("#body tr");
 
-            // ✅ reset everything first
+            // 🔹 Reset all rows
             rows.forEach(r => {
                 r.style.display = "none";
                 r.classList.remove("selected-row", "chain-row");
             });
-
-            const allowedMap = {
-                6: [10, 15, 20],
-                10: [15, 20],
-                15: [20],
-                20: []
-            };
 
             tableData.forEach((row, i) => {
 
@@ -365,9 +445,7 @@
                 let r = num(row[idxReceive]);
                 let p = num(row[idxPaid]);
                 let re = num(row[idxResult]);
-                let t = num(row[idxTime]);
 
-                // only check gap columns for match
                 if (
                     isNaN(g) ||
                     isNaN(r) ||
@@ -382,28 +460,14 @@
                 // ✅ MATCH FOUND
                 if (d1 === gap1 && d2 === gap2 && d3 === gap3) {
 
-                    // show match row
+                    // show matched row
                     rows[i].style.display = "";
                     rows[i].classList.add("selected-row");
 
-                    let allowedTimes = allowedMap[t] || [];
-
-                    for (let j = i + 1; j < tableData.length && j <= i + 5; j++) {
-
-                        let nextTime = num(tableData[j][idxTime]);
-
-                        if (isNaN(nextTime)) continue;
-
-                        if (allowedTimes.includes(nextTime)) {
-
-                            rows[j].style.display = "";
-                            rows[j].classList.add("chain-row");
-
-                            // 🔥 STOP condition
-                            if (nextTime === 20) {
-                                break; // ⛔ STOP everything after reaching 20
-                            }
-                        }
+                    // 🔥 Show next 3 rows
+                    for (let j = i + 1; j <= i + 3 && j < rows.length; j++) {
+                        rows[j].style.display = "";
+                        rows[j].classList.add("chain-row");
                     }
                 }
 
